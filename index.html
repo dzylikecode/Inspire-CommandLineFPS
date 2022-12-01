@@ -116,14 +116,22 @@
         },
         plugins: [
           function (hook, vm) {
-            const githubURL =
-              "https://github.com/dzylikecode/Inspire-CommandLineFPS/blob/master/";
-            let currentFileURL;
+            const reposURL =
+              "https://github.com/dzylikecode/Inspire-CommandLineFPS/blob/master/"; // github 需要最后的/, 而live server 不需要, 无妨
+            let reposFileURL;
+            let pagesFileURL;
             hook.beforeEach(function (html) {
               num = 0;
               markmapSvg = [];
-              currentFileURL = githubURL + vm.route.file;
-              let editHtml = "[:memo: EDIT DOCUMENT](" + currentFileURL + ")\n";
+              reposFileURL = reposURL + vm.route.file;
+              pagesFileURL =
+                window.location.origin +
+                window.location.pathname.slice(
+                  0,
+                  window.location.pathname.lastIndexOf("/") + 1
+                );
+              +vm.route.file;
+              let editHtml = "[:memo: EDIT DOCUMENT](" + reposFileURL + ")\n";
               return (
                 editHtml +
                 html.replace(
@@ -134,15 +142,38 @@
             });
             hook.doneEach(function () {
               markmapSvg.forEach((fn) => fn());
-              const githubLink = document.querySelectorAll("a.GitHub");
-              githubLink.forEach((link) => {
-                const relative = link.attributes.href.value;
-                const githubPath = currentFileURL.slice(
-                  0,
-                  currentFileURL.lastIndexOf("/") + 1
-                );
-                link.href = githubPath + relative;
-              });
+              modifyReposLink();
+              modifyPagesLink();
+              setLinkBlank();
+              return;
+              function setLinkBlank() {
+                const links = document.querySelectorAll("a.GitHub");
+                links.forEach((link) => {
+                  link.setAttribute("target", "_blank");
+                });
+              }
+              function modifyReposLink() {
+                const links = document.querySelectorAll("a.GitHub.Repos");
+                links.forEach((link) => {
+                  const relative = link.attributes.href.value;
+                  const rootPath = reposFileURL.slice(
+                    0,
+                    reposFileURL.lastIndexOf("/") + 1
+                  );
+                  link.href = rootPath + relative;
+                });
+              }
+              function modifyPagesLink() {
+                const links = document.querySelectorAll("a.GitHub.Pages");
+                links.forEach((link) => {
+                  const relative = link.attributes.href.value;
+                  const rootPath = pagesFileURL.slice(
+                    0,
+                    pagesFileURL.lastIndexOf("/") + 1
+                  );
+                  link.href = rootPath + relative;
+                });
+              }
             });
           },
         ],

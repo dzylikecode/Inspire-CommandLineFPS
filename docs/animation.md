@@ -24,10 +24,10 @@ term.echo(
 
 8: 代表帧率, 如果是 60, 则会运行得非常的快(动画的速度是与帧率相关的)
 
-- <a class="GitHub" href="../example/animation/static-anim/js/main.js">code</a>
-- <a href="../example/animation/static-anim/index.html">preview</a>
+- <a class="GitHub Repos" href="../example/animation/static-anim/js/main.js">code</a>
+- <a class="GitHub pages" href="../example/animation/static-anim/index.html">preview</a>
 
 ## 动态生成
 
-- <a class="GitHub" href="../example/animation/dynamic-anim/js/main.js">code</a>
-- <a href="../example/animation/dynamic-anim/index.html">preview</a>
+- <a class="GitHub Repos" href="../example/animation/dynamic-anim/js/main.js">code</a>
+- <a class="GitHub Pages" href="../example/animation/dynamic-anim/index.html">preview</a>
