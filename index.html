@@ -153,7 +153,7 @@
                 });
               }
               function modifyReposLink() {
-                const links = document.querySelectorAll("a.GitHub.Repos");
+                const links = document.querySelectorAll("a.Repos");
                 links.forEach((link) => {
                   const relative = link.attributes.href.value;
                   const rootPath = reposFileURL.slice(
@@ -164,7 +164,7 @@
                 });
               }
               function modifyPagesLink() {
-                const links = document.querySelectorAll("a.GitHub.Pages");
+                const links = document.querySelectorAll("a.Pages");
                 links.forEach((link) => {
                   const relative = link.attributes.href.value;
                   const rootPath = pagesFileURL.slice(
