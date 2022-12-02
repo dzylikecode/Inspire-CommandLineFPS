@@ -1,7 +1,11 @@
+import map from "./map.js";
+import { Player } from "./player.js";
+import { Camera } from "./camera.js";
+import { Screen } from "./screen.js";
+import { Clock } from "./utils.js";
+
 let nScreenWidth = 120; // Console Screen Size X (columns)
 let nScreenHeight = 40; // Console Screen Size Y (rows)
-let nMapWidth = 16; // World Dimensions
-let nMapHeight = 16;
 
 let fPlayerX = 14.7; // Player Start Position
 let fPlayerY = 5.09;
@@ -9,32 +13,14 @@ let fPlayerA = 0.0; // Player Start Rotation
 let fFOV = 3.14159 / 4.0; // Field of View
 let fDepth = 16.0; // Maximum rendering distance
 let fSpeed = 5.0; // Walking Speed
+let angleSpeed = fSpeed * 0.75;
 
 // Create Screen Buffer
-let screen = new Array(nScreenWidth * nScreenHeight);
-
-// Create Map of world space # = wall block, . = space
-let map = [
-  "#########.......",
-  "#...............",
-  "#.......########",
-  "#..............#",
-  "#......##......#",
-  "#......##......#",
-  "#..............#",
-  "###............#",
-  "##.............#",
-  "#......####..###",
-  "#......#.......#",
-  "#......#.......#",
-  "#..............#",
-  "#......#########",
-  "#..............#",
-  "################",
-];
-
-let thisLoop = new Date();
-let lastLoop = new Date();
+const screen = new Screen(nScreenWidth, nScreenHeight);
+const player = new Player(fPlayerX, fPlayerY, fPlayerA, fSpeed, angleSpeed);
+const camera = new Camera(nScreenWidth, nScreenHeight, fFOV, fDepth);
+const clock = new Clock();
+let elapsedTime;
 
 window.addEventListener(
   "keydown",
@@ -43,88 +29,53 @@ window.addEventListener(
       return; // Do nothing if the event was already processed
     }
 
-    switch (event.key) {
-      case "A":
-        // Handle CCW Rotation
-        fPlayerA -= fSpeed * 0.75 * fElapsedTime;
-        break;
-      case "ArrowUp":
-        // Handle CW Rotation
-        fPlayerA += fSpeed * 0.75 * fElapsedTime;
-        break;
-      case "W":
-        // Handle Forwards movement & collision
-        fPlayerX += sinf(fPlayerA) * fSpeed * fElapsedTime;
-        fPlayerY += cosf(fPlayerA) * fSpeed * fElapsedTime;
-        if (map[fPlayerX * nMapWidth + fPlayerY] == "#") {
-          // 注意取整
-          fPlayerX -= sinf(fPlayerA) * fSpeed * fElapsedTime;
-          fPlayerY -= cosf(fPlayerA) * fSpeed * fElapsedTime;
-        }
-        break;
-      case "S":
-        // Handle backwards movement & collision
-        fPlayerX -= sinf(fPlayerA) * fSpeed * fElapsedTime;
-        fPlayerY -= cosf(fPlayerA) * fSpeed * fElapsedTime;
-        if (map[fPlayerX * nMapWidth + fPlayerY] == "#") {
-          fPlayerX += sinf(fPlayerA) * fSpeed * fElapsedTime;
-          fPlayerY += cosf(fPlayerA) * fSpeed * fElapsedTime;
-        }
-        break;
-      default:
-        return; // Quit when this doesn't handle the key event.
-    }
+    const key = event.key.toUpperCase();
+    const keyBindActions = {
+      A: () => player.rotateLeft(elapsedTime),
+      D: () => player.rotateRight(elapsedTime),
+      W: () => player.moveForward(elapsedTime),
+      S: () => player.moveBackward(elapsedTime),
+    };
 
-    // Cancel the default action to avoid it being handled twice
+    keyBindActions[key]?.(); // 有可能按下没有设定的按键
+
     event.preventDefault();
   },
   true
 );
-// the last option dispatches the event to the listener first,
-// then dispatches event to window
 
 while (1) {
-  // We'll need time differential per frame to calculate modification
-  // to movement speeds, to ensure consistant movement, as ray-tracing
-  // is non-deterministic
-  thisLoop = new Date();
-  let elapsedTime = thisLoop - lastLoop;
-  lastLoop = thisLoop;
-  let fElapsedTime = elapsedTime;
+  clock.tick();
+  elapsedTime = clock.getDelta();
 
   for (let x = 0; x < nScreenWidth; x++) {
     // For each column, calculate the projected ray angle into world space
-    let fRayAngle = fPlayerA - fFOV / 2.0 + (x / nScreenWidth) * fFOV;
+    const rayTheta =
+      player.theta - camera.fov / 2.0 + (x / nScreenWidth) * camera.fov;
 
     // Find distance to wall
-    let fStepSize = 0.1; // Increment size for ray casting, decrease to increase
-    let fDistanceToWall = 0.0; //                                      resolution
+    const stepSize = 0.1; // Increment size for ray casting, decrease to increase
+    let distanceToWall = 0.0; //                                      resolution
 
     let bHitWall = false; // Set when ray hits wall block
     let bBoundary = false; // Set when ray hits boundary between two wall blocks
 
-    let fEyeX = sinf(fRayAngle); // Unit vector for ray in player space
-    let fEyeY = cosf(fRayAngle);
+    const [eyeX, eyeY] = [Math.cos(rayTheta), Math.sin(rayTheta)]; // Unit vector for ray in player space
 
     // Incrementally cast ray from player, along ray angle, testing for
     // intersection with a block
-    while (!bHitWall && fDistanceToWall < fDepth) {
-      fDistanceToWall += fStepSize;
-      let nTestX = fPlayerX + fEyeX * fDistanceToWall;
-      let nTestY = fPlayerY + fEyeY * fDistanceToWall;
+    while (!bHitWall && distanceToWall < camera.depth) {
+      distanceToWall += stepSize;
+      const rayX = player.x + eyeX * distanceToWall;
+      const rayY = player.y + eyeY * distanceToWall;
 
       // Test if ray is out of bounds
-      if (
-        nTestX < 0 ||
-        nTestX >= nMapWidth ||
-        nTestY < 0 ||
-        nTestY >= nMapHeight
-      ) {
+      if (map.isOutOfBounds(rayX, rayY)) {
         bHitWall = true; // Just set distance to maximum depth
-        fDistanceToWall = fDepth;
+        distanceToWall = camera.depth;
       } else {
         // Ray is inbounds so test to see if the ray cell is a wall block
-        if (map[nTestX * nMapWidth + nTestY] == "#") {
+        if (map.isWall(rayX, rayY)) {
           // Ray has hit wall
           bHitWall = true;
 
@@ -139,11 +90,12 @@ while (1) {
           for (let tx = 0; tx < 2; tx++)
             for (let ty = 0; ty < 2; ty++) {
               // Angle of corner to eye
-              let vy = nTestY + ty - fPlayerY;
-              let vx = nTestX + tx - fPlayerX;
-              let d = sqrt(vx * vx + vy * vy);
-              let dot = (fEyeX * vx) / d + (fEyeY * vy) / d;
-              p.push_back(make_pair(d, dot));
+              const vx = rayX + tx - player.y;
+              const vy = rayY + ty - player.x;
+
+              const length = Math.sqrt(vx * vx + vy * vy);
+              const dot = (eyeX * vx + eyeY * vy) / length;
+              p.push_back(make_pair(length, dot));
             }
 
           // Sort Pairs from closest to farthest
@@ -192,14 +144,9 @@ while (1) {
   }
 
   // Display Stats
-  swprintf_s(
-    screen,
-    "X=%3.2f, Y=%3.2f, A=%3.2f FPS=%3.2f ",
-    fPlayerX,
-    fPlayerY,
-    fPlayerA,
-    1.0 / fElapsedTime
-  );
+  const stateInfo = `X=${fPlayerX.toFixed(2)}, Y=${fPlayerY.toFixed(
+    2
+  )}, A=${fPlayerA.toFixed(2)}, FPS=${(1.0 / fElapsedTime).toFixed(2)}`;
 
   // Display Map
   for (let nx = 0; nx < nMapWidth; nx++)

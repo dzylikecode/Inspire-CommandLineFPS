@@ -24,10 +24,29 @@ term.echo(
 
 8: 代表帧率, 如果是 60, 则会运行得非常的快(动画的速度是与帧率相关的)
 
-- <a class="GitHub Repos" href="../example/animation/static-anim/js/main.js">code</a>
-- <a class="GitHub Pages" href="../example/animation/static-anim/index.html">preview</a>
+- <a class="Repos" target="_blank" href="../example/animation/static-anim/js/main.js">code</a>
+- <a class="Pages" target="_blank" href="../example/animation/static-anim/index.html">preview</a>
 
 ## 动态生成
 
-- <a class="GitHub Repos" href="../example/animation/dynamic-anim/js/main.js">code</a>
-- <a class="GitHub Pages" href="../example/animation/dynamic-anim/index.html">preview</a>
+```js
+let term = $("body").terminal({});
+class BarAnimation extends $.terminal.Animation {
+  constructor(...args) {
+    super(...args);
+    this._i = 0;
+  }
+  render(term) {
+    if (this._i > term.cols()) {
+      this._i = 0;
+    } else {
+      this._i++;
+    }
+    return ["-".repeat(this._i), `${this._i}`];
+  }
+}
+term.echo(new BarAnimation(50));
+```
+
+- <a class="Repos" target="_blank" href="../example/animation/dynamic-anim/js/main.js">code</a>
+- <a class="Pages" target="_blank" href="../example/animation/dynamic-anim/index.html">preview</a>

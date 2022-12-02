@@ -144,14 +144,7 @@
               markmapSvg.forEach((fn) => fn());
               modifyReposLink();
               modifyPagesLink();
-              setLinkBlank();
               return;
-              function setLinkBlank() {
-                const links = document.querySelectorAll("a.GitHub");
-                links.forEach((link) => {
-                  link.setAttribute("target", "_blank");
-                });
-              }
               function modifyReposLink() {
                 const links = document.querySelectorAll("a.Repos");
                 links.forEach((link) => {
