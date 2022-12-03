@@ -18,6 +18,10 @@
 
   [JavaScript Terminal](https://terminal.jcubic.pl/)
 
+## character
+
+- ASCII Table:https://www.asciitable.com/
+
 ## reference
 
 - Wolfenstein 3D. (2022, November 8). In Wikipedia. https://en.wikipedia.org/wiki/Wolfenstein_3D

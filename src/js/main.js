@@ -50,8 +50,8 @@ while (1) {
 
   for (let x = 0; x < nScreenWidth; x++) {
     // For each column, calculate the projected ray angle into world space
-    const rayTheta =
-      player.theta - camera.fov / 2.0 + (x / nScreenWidth) * camera.fov;
+    const rayStartTheta = player.theta - fFOV / 2.0;
+    const rayTheta = rayStartTheta + (x / nScreenWidth) * camera.fov;
 
     // Find distance to wall
     const stepSize = 0.1; // Increment size for ray casting, decrease to increase
@@ -60,14 +60,14 @@ while (1) {
     let bHitWall = false; // Set when ray hits wall block
     let bBoundary = false; // Set when ray hits boundary between two wall blocks
 
-    const [eyeX, eyeY] = [Math.cos(rayTheta), Math.sin(rayTheta)]; // Unit vector for ray in player space
+    const [rayDirX, rayDirY] = [Math.cos(rayTheta), Math.sin(rayTheta)]; // Unit vector for ray in player space
 
     // Incrementally cast ray from player, along ray angle, testing for
     // intersection with a block
     while (!bHitWall && distanceToWall < camera.depth) {
       distanceToWall += stepSize;
-      const rayX = player.x + eyeX * distanceToWall;
-      const rayY = player.y + eyeY * distanceToWall;
+      const rayX = player.x + rayDirX * distanceToWall;
+      const rayY = player.y + rayDirY * distanceToWall;
 
       // Test if ray is out of bounds
       if (map.isOutOfBounds(rayX, rayY)) {
@@ -83,62 +83,83 @@ while (1) {
           // of the tile, to the player. The more coincident this ray
           // is to the rendering ray, the closer we are to a tile
           // boundary, which we'll shade to add detail to the walls
-          let p;
 
-          // Test each corner of hit tile, storing the distance from
-          // the player, and the calculated dot product of the two rays
-          for (let tx = 0; tx < 2; tx++)
-            for (let ty = 0; ty < 2; ty++) {
-              // Angle of corner to eye
-              const vx = rayX + tx - player.y;
-              const vy = rayY + ty - player.x;
+          const wallX = Math.floor(rayX);
+          const wallY = Math.floor(rayY);
+          const corner = [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 1],
+          ];
 
-              const length = Math.sqrt(vx * vx + vy * vy);
-              const dot = (eyeX * vx + eyeY * vy) / length;
-              p.push_back(make_pair(length, dot));
-            }
+          const visibleCornerDistribution = [
+            [
+              [0, 1, 3],
+              [0, 1],
+              [0, 1, 2],
+            ],
+            [[0, 3], [-1], [1, 2]],
+            [
+              [0, 2, 3],
+              [2, 3],
+              [1, 2, 3],
+            ],
+          ];
 
-          // Sort Pairs from closest to farthest
-          sort(p.begin(), p.end(), (left, right) => left.first < right.first);
+          function mapPosToCornerDistribution(pos, cornerPos) {
+            if (pos < cornerPos) return 0;
+            else if (pos === cornerPos) return 1;
+            else return 2;
+          }
 
-          // First two/three are closest (we will never see all four)
-          let fBound = 0.01;
-          if (acos(p.at(0).second) < fBound) bBoundary = true;
-          if (acos(p.at(1).second) < fBound) bBoundary = true;
-          if (acos(p.at(2).second) < fBound) bBoundary = true;
+          const [distriX, distriY] = [
+            mapPosToCornerDistribution(player.x, wallX),
+            mapPosToCornerDistribution(player.y, wallY),
+          ];
+
+          const visibleCorner = visibleCornerDistribution[distriX][distriY].map(
+            (index) => corner[index]
+          );
+
+          const thetaVisibleCornerToRay = visibleCorner.map(([cx, cy]) => {
+            const wallXToPlayer = wallX + cx - player.x;
+            const wallYToPlayer = wallY + cy - player.y;
+            const length = Math.sqrt(
+              // Distance from ray to player
+              wallXToPlayer * wallXToPlayer + wallYToPlayer * wallYToPlayer
+            );
+            const cosTheta =
+              (wallXToPlayer * rayDirX + wallYToPlayer * rayDirY) / length;
+            return Math.acos(cosTheta);
+          });
+
+          const thetaBound = 0.01; // When ray is this close to a boundary, consider it as intersecting
+          bBoundary = thetaVisibleCornerToRay.some(
+            // If ray is close to any of the tile's corners
+            (theta) => theta < thetaBound
+          );
         }
       }
     }
 
     // Calculate distance to ceiling and floor
-    let nCeiling = nScreenHeight / 2.0 - nScreenHeight / fDistanceToWall;
-    let nFloor = nScreenHeight - nCeiling;
+    const ceiling = nScreenHeight / 2.0 - nScreenHeight / distanceToWall;
+    const floor = nScreenHeight - ceiling;
 
-    // Shader walls based on distance
-    let nShade = " ";
-    if (fDistanceToWall <= fDepth / 4.0) nShade = 0x2588; // Very close
-    else if (fDistanceToWall < fDepth / 3.0) nShade = 0x2593;
-    else if (fDistanceToWall < fDepth / 2.0) nShade = 0x2592;
-    else if (fDistanceToWall < fDepth) nShade = 0x2591;
-    else nShade = " "; // Too far away
+    const wallShade = getWallShade(distanceToWall / camera.depth);
 
     if (bBoundary) nShade = " "; // Black it out
 
     for (let y = 0; y < nScreenHeight; y++) {
       // Each Row
-      if (y <= nCeiling) screen[y * nScreenWidth + x] = " ";
-      else if (y > nCeiling && y <= nFloor)
-        screen[y * nScreenWidth + x] = nShade;
+      if (y <= nCeiling) screen[y][x] = " ";
+      else if (y > ceiling && y <= floor) screen[y][x] = wallShade;
       // Floor
       else {
         // Shade floor based on distance
         let b = 1.0 - (y - nScreenHeight / 2.0) / (nScreenHeight / 2.0);
-        if (b < 0.25) nShade = "#";
-        else if (b < 0.5) nShade = "x";
-        else if (b < 0.75) nShade = ".";
-        else if (b < 0.9) nShade = "-";
-        else nShade = " ";
-        screen[y * nScreenWidth + x] = nShade;
+        screen[y][x] = getFloorShade(b);
       }
     }
   }
@@ -163,4 +184,26 @@ while (1) {
     { X: 0, Y: 0 },
     dwBytesWritten
   );
+}
+
+function getWallShade(dist) {
+  // Shader walls based on distance
+  let shade = " ";
+  if (dist <= 1 / 4.0) shade = `\u2588`; // Very close
+  else if (dist < 1 / 3.0) shade = `\u2593`;
+  else if (dist < 1 / 2.0) shade = `\u2592`;
+  else if (dist < 1) shade = `\u2591`;
+  else shade = " "; // Too far away
+  return shade;
+}
+
+function getFloorShade(dist) {
+  // Shade floor based on distance
+  let shade = " ";
+  if (dist < 0.25) shade = "#";
+  else if (dist < 0.5) shade = "x";
+  else if (dist < 0.75) shade = ".";
+  else if (dist < 0.9) shade = "-";
+  else shade = " ";
+  return shade;
 }
