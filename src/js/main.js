@@ -3,6 +3,7 @@ import { Player } from "./player.js";
 import { Camera } from "./camera.js";
 import { Screen } from "./screen.js";
 import { Clock } from "./utils.js";
+import { checkRayHitWallBound } from "./checkRayHitWallBound.js";
 
 let nScreenWidth = 120; // Console Screen Size X (columns)
 let nScreenHeight = 40; // Console Screen Size Y (rows)
@@ -64,92 +65,52 @@ while (1) {
 
     // Incrementally cast ray from player, along ray angle, testing for
     // intersection with a block
-    while (!bHitWall && distanceToWall < camera.depth) {
+    let stopMsg = "";
+    let rayX, rayY;
+    while (1) {
       distanceToWall += stepSize;
-      const rayX = player.x + rayDirX * distanceToWall;
-      const rayY = player.y + rayDirY * distanceToWall;
-
-      // Test if ray is out of bounds
-      if (map.isOutOfBounds(rayX, rayY)) {
-        bHitWall = true; // Just set distance to maximum depth
+      rayX = player.x + rayDirX * distanceToWall;
+      rayY = player.y + rayDirY * distanceToWall;
+      if (distanceToWall > camera.depth) {
+        stopMsg = "OutOfDepth";
         distanceToWall = camera.depth;
-      } else {
-        // Ray is inbounds so test to see if the ray cell is a wall block
-        if (map.isWall(rayX, rayY)) {
-          // Ray has hit wall
-          bHitWall = true;
-
-          // To highlight tile boundaries, cast a ray from each corner
-          // of the tile, to the player. The more coincident this ray
-          // is to the rendering ray, the closer we are to a tile
-          // boundary, which we'll shade to add detail to the walls
-
-          const wallX = Math.floor(rayX);
-          const wallY = Math.floor(rayY);
-          const corner = [
-            [0, 0],
-            [1, 0],
-            [1, 1],
-            [0, 1],
-          ];
-
-          const visibleCornerDistribution = [
-            [
-              [0, 1, 3],
-              [0, 1],
-              [0, 1, 2],
-            ],
-            [[0, 3], [-1], [1, 2]],
-            [
-              [0, 2, 3],
-              [2, 3],
-              [1, 2, 3],
-            ],
-          ];
-
-          function mapPosToCornerDistribution(pos, cornerPos) {
-            if (pos < cornerPos) return 0;
-            else if (pos === cornerPos) return 1;
-            else return 2;
-          }
-
-          const [distriX, distriY] = [
-            mapPosToCornerDistribution(player.x, wallX),
-            mapPosToCornerDistribution(player.y, wallY),
-          ];
-
-          const visibleCorner = visibleCornerDistribution[distriX][distriY].map(
-            (index) => corner[index]
-          );
-
-          const thetaVisibleCornerToRay = visibleCorner.map(([cx, cy]) => {
-            const wallXToPlayer = wallX + cx - player.x;
-            const wallYToPlayer = wallY + cy - player.y;
-            const length = Math.sqrt(
-              // Distance from ray to player
-              wallXToPlayer * wallXToPlayer + wallYToPlayer * wallYToPlayer
-            );
-            const cosTheta =
-              (wallXToPlayer * rayDirX + wallYToPlayer * rayDirY) / length;
-            return Math.acos(cosTheta);
-          });
-
-          const thetaBound = 0.01; // When ray is this close to a boundary, consider it as intersecting
-          bBoundary = thetaVisibleCornerToRay.some(
-            // If ray is close to any of the tile's corners
-            (theta) => theta < thetaBound
-          );
-        }
+        break;
+      } else if (map.isOutOfBounds(rayX, rayY)) {
+        stopMsg = "OutOfBound";
+        break;
+      } else if (map.isWall(rayX, rayY)) {
+        stopMsg = "HitWall";
+        break;
       }
     }
+
+    if (stopMsg == "HitWall") {
+      // To highlight tile boundaries, cast a ray from each corner
+      // of the tile, to the player. The more coincident this ray
+      // is to the rendering ray, the closer we are to a tile
+      // boundary, which we'll shade to add detail to the walls
+
+      const wallX = Math.floor(rayX);
+      const wallY = Math.floor(rayY);
+      const thetaBound = 0.01; // When ray is this close to a boundary, consider it as intersecting
+
+      bBoundary = checkRayHitWallBound(
+        { x: rayDirX, y: rayDirY },
+        { x: wallX, y: wallY },
+        { x: player.x, y: player.y },
+        thetaBound
+      );
+    }
+
+    // 注意坐标系变换
 
     // Calculate distance to ceiling and floor
     const ceiling = nScreenHeight / 2.0 - nScreenHeight / distanceToWall;
     const floor = nScreenHeight - ceiling;
 
-    const wallShade = getWallShade(distanceToWall / camera.depth);
-
-    if (bBoundary) nShade = " "; // Black it out
+    const wallShade = bBoundary
+      ? " " // Black it out
+      : getWallShade(distanceToWall / camera.depth);
 
     for (let y = 0; y < nScreenHeight; y++) {
       // Each Row
