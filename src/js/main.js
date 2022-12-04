@@ -4,8 +4,11 @@ import { Camera } from "./camera.js";
 import { Screen } from "./screen.js";
 import { Clock } from "./utils.js";
 import { checkRayHitWallBound } from "./checkRayHitWallBound.js";
+import { getFloorShade, getWallShade } from "./shade.js";
+import { emitRay } from "./ray.js";
+import { setGameLoop } from "./gameFrame.js";
 
-const screenWidth = 120; // Console Screen Size X (columns)
+const screenWidth = 80; // Console Screen Size X (columns)
 const screenHeight = 40; // Console Screen Size Y (rows)
 
 const playerStartX = 14.7; // Player Start Position
@@ -30,12 +33,14 @@ camera.attachTo(player);
 const clock = new Clock();
 let elapsedTime;
 
+setGameLoop(mainGame);
+
 window.addEventListener(
   "keydown",
   function (event) {
-    if (event.defaultPrevented) {
-      return; // Do nothing if the event was already processed
-    }
+    // if (event.defaultPrevented) {
+    //   return; // Do nothing if the event was already processed
+    // }
 
     const key = event.key.toUpperCase();
     const keyBindActions = {
@@ -47,12 +52,12 @@ window.addEventListener(
 
     keyBindActions[key]?.(); // 有可能按下没有设定的按键
 
-    event.preventDefault();
+    // event.preventDefault();
   },
   true
 );
 
-while (1) {
+function mainGame() {
   clock.tick();
   elapsedTime = clock.getDelta();
 
@@ -130,72 +135,15 @@ while (1) {
   // Display Map
   for (let nx = 0; nx < map.width; nx++)
     for (let ny = 0; ny < map.height; ny++) {
-      screen.setInScreen(nx, ny, map[ny][nx]);
+      screen.setInScreen(nx, ny, map.src[ny][nx]);
     }
   // Display Player
-  screen.setInCartesian(player.x, player.y, "P");
+  const [playerMapX, playerMapY] = map.transCartesianToScreen(
+    Math.floor(player.x),
+    Math.floor(player.y)
+  );
+  screen.setInScreen(playerMapX, playerMapY, "P");
 
   // Display Frame
-  WriteConsoleOutputCharacter(
-    hConsole,
-    screen,
-    screenWidth * screenHeight,
-    { X: 0, Y: 0 },
-    dwBytesWritten
-  );
-}
-
-// Incrementally cast ray from player, along ray angle, testing for
-// intersection with a block
-function emitRay(camera, emitDir, map) {
-  const stepSize = 0.1; // Increment size for ray casting, decrease to increase
-  let distanceToWall = 0.0;
-  let stopMsg = "";
-  let rayX = 0;
-  let rayY = 0;
-  while (1) {
-    distanceToWall += stepSize;
-    rayX = camera.x + emitDir.x * distanceToWall;
-    rayY = camera.y + emitDir.y * distanceToWall;
-    if (distanceToWall > camera.depth) {
-      stopMsg = "OutOfDepth";
-      distanceToWall = camera.depth;
-      break;
-    } else if (map.isOutOfBounds(rayX, rayY)) {
-      stopMsg = "OutOfBound";
-      break;
-    } else if (map.isWall(rayX, rayY)) {
-      stopMsg = "HitWall";
-      break;
-    }
-  }
-  return {
-    stopMsg: stopMsg,
-    ray: { x: rayX, y: rayY },
-    distanceToWall: distanceToWall,
-  };
-}
-
-function getWallShade(dist) {
-  // Shader walls based on distance
-  let shade = " ";
-
-  if (dist <= 1 / 4.0) shade = `\u2588`; // █
-  else if (dist < 1 / 3.0) shade = `\u2593`; // ▓
-  else if (dist < 1 / 2.0) shade = `\u2592`; // ▒
-  else if (dist < 1) shade = `\u2591`; // ░
-  else shade = " "; // Too far away
-
-  return shade;
-}
-
-function getFloorShade(dist) {
-  // Shade floor based on distance
-  let shade = " ";
-  if (dist < 0.25) shade = "#";
-  else if (dist < 0.5) shade = "x";
-  else if (dist < 0.75) shade = ".";
-  else if (dist < 0.9) shade = "-";
-  else shade = " ";
-  return shade;
+  screen.draw();
 }

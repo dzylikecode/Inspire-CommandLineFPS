@@ -26,6 +26,8 @@
 
 - [ ] image 坐标系变换的细节
 
+!> 设置字体很重要
+
 ## reference
 
 - Wolfenstein 3D. (2022, November 8). In Wikipedia. https://en.wikipedia.org/wiki/Wolfenstein_3D

@@ -2,3 +2,4 @@
 - [游戏主体逻辑](docs/main.md)
 - [animation](docs/animation.md)
 - [光线处理](docs/checkRayHitWallBound.md)
+- <a class="Pages" target="_blank" href="./src/index.html">效果</a>
