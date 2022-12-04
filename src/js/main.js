@@ -5,8 +5,8 @@ import { Screen } from "./screen.js";
 import { Clock } from "./utils.js";
 import { checkRayHitWallBound } from "./checkRayHitWallBound.js";
 
-const nScreenWidth = 120; // Console Screen Size X (columns)
-const nScreenHeight = 40; // Console Screen Size Y (rows)
+const screenWidth = 120; // Console Screen Size X (columns)
+const screenHeight = 40; // Console Screen Size Y (rows)
 
 const fPlayerX = 14.7; // Player Start Position
 const fPlayerY = 5.09;
@@ -17,9 +17,10 @@ const fSpeed = 5.0; // Walking Speed
 const angleSpeed = fSpeed * 0.75;
 
 // Create Screen Buffer
-const screen = new Screen(nScreenWidth, nScreenHeight);
+const screen = new Screen(screenWidth, screenHeight);
 const player = new Player(fPlayerX, fPlayerY, fPlayerA, fSpeed, angleSpeed);
-const camera = new Camera(nScreenWidth, nScreenHeight, fFOV, fDepth);
+const camera = new Camera(screenWidth, screenHeight, fFOV, fDepth);
+camera.attachTo(player);
 const clock = new Clock();
 let elapsedTime;
 
@@ -99,15 +100,12 @@ while (1) {
     for (let y = 0; y < screen.height; y++) {
       // Each Row
       let shade = "";
-      if (y <= floor) shade = " ";
+      // Shade based on distance
+      if (y <= floor) shade = getFloorShade(1 - y / (screen.height / 2.0));
       else if (y > floor && y <= ceiling) shade = wallShade;
-      // Floor
-      else {
-        // Shade floor based on distance
-        let b = 1.0 - (y - screen.height / 2.0) / (screen.height / 2.0);
-        shade = getFloorShade(b);
-      }
-      const [screenX, screenY] = transCartesianToScreen(x, y, screen);
+      else shade = " "; // Ceiling
+
+      screen.setInCartesian(x, y, shade);
     }
   }
 
@@ -119,15 +117,16 @@ while (1) {
   // Display Map
   for (let nx = 0; nx < nMapWidth; nx++)
     for (let ny = 0; ny < nMapWidth; ny++) {
-      screen[(ny + 1) * nScreenWidth + nx] = map[ny * nMapWidth + nx];
+      screen[(ny + 1) * screenWidth + nx] = map[ny * nMapWidth + nx];
     }
-  screen[(fPlayerX + 1) * nScreenWidth + fPlayerY] = "P";
+  // Display Player
+  screen.setInCartesian(player.x, player.y, "P");
 
   // Display Frame
   WriteConsoleOutputCharacter(
     hConsole,
     screen,
-    nScreenWidth * nScreenHeight,
+    screenWidth * screenHeight,
     { X: 0, Y: 0 },
     dwBytesWritten
   );
@@ -167,11 +166,13 @@ function emitRay(camera, emitDir, map) {
 function getWallShade(dist) {
   // Shader walls based on distance
   let shade = " ";
-  if (dist <= 1 / 4.0) shade = `\u2588`; // Very close
-  else if (dist < 1 / 3.0) shade = `\u2593`;
-  else if (dist < 1 / 2.0) shade = `\u2592`;
-  else if (dist < 1) shade = `\u2591`;
+
+  if (dist <= 1 / 4.0) shade = `\u2588`; // █
+  else if (dist < 1 / 3.0) shade = `\u2593`; // ▓
+  else if (dist < 1 / 2.0) shade = `\u2592`; // ▒
+  else if (dist < 1) shade = `\u2591`; // ░
   else shade = " "; // Too far away
+
   return shade;
 }
 
@@ -184,8 +185,4 @@ function getFloorShade(dist) {
   else if (dist < 0.9) shade = "-";
   else shade = " ";
   return shade;
-}
-
-function transCartesianToScreen(x, y, screen) {
-  return [x, screen.height - y];
 }

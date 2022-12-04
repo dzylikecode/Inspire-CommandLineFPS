@@ -5,4 +5,16 @@ export class Camera {
     this.fov = fov;
     this.depth = depth;
   }
+
+  attachTo(obj) {
+    this.obj = obj;
+  }
+
+  get x() {
+    return this.obj.x;
+  }
+
+  get y() {
+    return this.obj.y;
+  }
 }
