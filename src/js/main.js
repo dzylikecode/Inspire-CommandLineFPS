@@ -8,18 +8,24 @@ import { checkRayHitWallBound } from "./checkRayHitWallBound.js";
 const screenWidth = 120; // Console Screen Size X (columns)
 const screenHeight = 40; // Console Screen Size Y (rows)
 
-const fPlayerX = 14.7; // Player Start Position
-const fPlayerY = 5.09;
-const fPlayerA = 0.0; // Player Start Rotation
-const fFOV = 3.14159 / 4.0; // Field of View
-const fDepth = 16.0; // Maximum rendering distance
-const fSpeed = 5.0; // Walking Speed
-const angleSpeed = fSpeed * 0.75;
+const playerStartX = 14.7; // Player Start Position
+const playerStartY = 5.09;
+const playerStartTheta = 0.0; // Player Start Rotation
+const playerSpeed = 5.0; // Walking Speed
+const angleSpeed = playerSpeed * 0.75;
+const cameraFov = 3.14159 / 4.0; // Field of View
+const cameraDepth = 16.0; // Maximum rendering distance
 
 // Create Screen Buffer
 const screen = new Screen(screenWidth, screenHeight);
-const player = new Player(fPlayerX, fPlayerY, fPlayerA, fSpeed, angleSpeed);
-const camera = new Camera(screenWidth, screenHeight, fFOV, fDepth);
+const player = new Player(
+  playerStartX,
+  playerStartY,
+  playerStartTheta,
+  playerSpeed,
+  angleSpeed
+);
+const camera = new Camera(screenWidth, screenHeight, cameraFov, cameraDepth);
 camera.attachTo(player);
 const clock = new Clock();
 let elapsedTime;
@@ -52,7 +58,7 @@ while (1) {
 
   for (let x = 0; x < screen.width; x++) {
     // For each column, calculate the projected ray angle into world space
-    const rayStartTheta = player.theta - fFOV / 2.0;
+    const rayStartTheta = player.theta - camera.fov / 2.0;
     const rayTheta = rayStartTheta + (x / screen.width) * camera.fov;
 
     const [rayDirX, rayDirY] = [Math.cos(rayTheta), Math.sin(rayTheta)]; // Unit vector for ray in player space
@@ -101,7 +107,7 @@ while (1) {
       // Each Row
       let shade = "";
       // Shade based on distance
-      if (y <= floor) shade = getFloorShade(1 - y / (screen.height / 2.0));
+      if (y <= floor) shade = getFloorShade(y / (screen.height / 2.0));
       else if (y > floor && y <= ceiling) shade = wallShade;
       else shade = " "; // Ceiling
 
@@ -110,14 +116,21 @@ while (1) {
   }
 
   // Display Stats
-  const stateInfo = `X=${fPlayerX.toFixed(2)}, Y=${fPlayerY.toFixed(
-    2
-  )}, A=${fPlayerA.toFixed(2)}, FPS=${(1.0 / fElapsedTime).toFixed(2)}`;
+  function formatNumber(number, padNum, pad, decimal) {
+    const numberWithDecimal = number.toFixed(decimal);
+    return String(numberWithDecimal).padStart(padNum, pad);
+  }
+  const format3d2 = (number) => formatNumber(number, 3, " ", 2);
+  const stateX = format3d2(player.x);
+  const stateY = format3d2(player.y);
+  const stateTheta = format3d2(player.theta);
+  const stateFPS = format3d2(elapsedTime);
+  const stateInfo = `X=${stateX}, Y=${stateY}, A=${stateTheta}, FPS=${stateFPS}`;
 
   // Display Map
-  for (let nx = 0; nx < nMapWidth; nx++)
-    for (let ny = 0; ny < nMapWidth; ny++) {
-      screen[(ny + 1) * screenWidth + nx] = map[ny * nMapWidth + nx];
+  for (let nx = 0; nx < map.width; nx++)
+    for (let ny = 0; ny < map.height; ny++) {
+      screen.setInScreen(nx, ny, map[ny][nx]);
     }
   // Display Player
   screen.setInCartesian(player.x, player.y, "P");
