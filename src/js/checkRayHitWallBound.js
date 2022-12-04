@@ -6,7 +6,7 @@
  *
  * - 问题的概述
  *
- *   link: https://dzylikecode.github.io/Inspire-CommandLineFPS/#/docs/lib/checkRayHitWallBound.md
+ *   link: https://dzylikecode.github.io/Inspire-CommandLineFPS/#/docs/checkRayHitWallBound.md
  *
  */
 

@@ -22,6 +22,10 @@
 
 - ASCII Table:https://www.asciitable.com/
 
+## 坐标系的变换
+
+- [ ] image 坐标系变换的细节
+
 ## reference
 
 - Wolfenstein 3D. (2022, November 8). In Wikipedia. https://en.wikipedia.org/wiki/Wolfenstein_3D
