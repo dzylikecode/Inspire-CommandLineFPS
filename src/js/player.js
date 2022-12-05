@@ -9,10 +9,10 @@ export class Player {
     this.omega = omega;
   }
   rotateLeft(deltaTime) {
-    this.theta += this.omega * deltaTime;
+    this.theta -= this.omega * deltaTime;
   }
   rotateRight(deltaTime) {
-    this.theta -= this.omega * deltaTime;
+    this.theta += this.omega * deltaTime;
   }
   moveForward(deltaTime) {
     const pretendX = this.x + this.v * Math.cos(this.theta) * deltaTime;
