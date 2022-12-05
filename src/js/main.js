@@ -2,7 +2,7 @@ import map from "./map.js";
 import { Player } from "./player.js";
 import { Camera } from "./camera.js";
 import { Screen } from "./screen.js";
-import { Clock } from "./utils.js";
+import { Clock, format3d2, formatRad } from "./utils.js";
 import { checkRayHitWallBound } from "./checkRayHitWallBound.js";
 import { getFloorShade, getWallShade } from "./shade.js";
 import { emitRay } from "./ray.js";
@@ -50,9 +50,11 @@ window.addEventListener(
       S: () => player.moveBackward(elapsedTime),
     };
 
-    keyBindActions[key]?.(); // 有可能按下没有设定的按键
+    if (key in keyBindActions) {
+      keyBindActions[key]?.(); // 有可能按下没有设定的按键
 
-    // event.preventDefault();
+      event.preventDefault();
+    }
   },
   true
 );
@@ -121,20 +123,10 @@ function mainGame() {
   }
 
   // Display Stats
-  function formatNumber(number, padNum, pad, decimal) {
-    const numberWithDecimal = number.toFixed(decimal);
-    return String(numberWithDecimal).padStart(padNum, pad);
-  }
-  function radiansToDegrees(radians) {
-    const degree = radians * (180 / Math.PI);
-    if (degree < 0) return degree + 360;
-    else if (degree > 360) return degree - 360;
-    else return degree;
-  }
-  const format3d2 = (number) => formatNumber(number, 3, " ", 2);
+
   const stateX = format3d2(player.x);
   const stateY = format3d2(player.y);
-  const stateTheta = format3d2(radiansToDegrees(player.theta)) + "°";
+  const stateTheta = formatRad(player.theta) + "°";
   const stateFPS = format3d2(1.0 / elapsedTime);
   const stateInfo = `X=${stateX}, Y=${stateY}, A=${stateTheta}, FPS=${stateFPS}`;
   screen.setInfo(stateInfo);
