@@ -44,8 +44,8 @@ window.addEventListener(
 
     const key = event.key.toUpperCase();
     const keyBindActions = {
-      A: () => player.rotateLeft(elapsedTime),
-      D: () => player.rotateRight(elapsedTime),
+      D: () => player.rotateLeft(elapsedTime), // 参考系的问题, 需要变换一下
+      A: () => player.rotateRight(elapsedTime),
       W: () => player.moveForward(elapsedTime),
       S: () => player.moveBackward(elapsedTime),
     };
