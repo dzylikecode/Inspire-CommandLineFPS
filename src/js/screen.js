@@ -1,7 +1,13 @@
 import { gameLoop } from "./gameFrame.js";
 
-const term = $("body").terminal({});
+const term = $("body").terminal(
+  {},
+  {
+    greetings: "W to move up, S to move down, A to move left, D to move right",
+  }
+);
 let screenBuffer = [""];
+let screenInfo = "";
 
 class BarAnimation extends $.terminal.Animation {
   constructor(...args) {
@@ -37,7 +43,11 @@ export class Screen {
     this.buffer[y][x] = value;
   }
   draw() {
-    screenBuffer = this.buffer.map((row) => row.join(""));
+    const image = this.buffer.map((row) => row.join(""));
+    screenBuffer = [screenInfo].concat(image);
+  }
+  setInfo(string) {
+    screenInfo = string;
   }
 }
 

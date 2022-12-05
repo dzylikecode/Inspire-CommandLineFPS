@@ -1,4 +1,4 @@
-let term = $("body").terminal();
+let term = $("body").terminal({}, { greetings: "需要申请摄像头权限" });
 // ASCII Camera inspired by https://codepen.io/ashleymarkfletcher/pen/QrmpPw
 class Camera extends $.terminal.Animation {
   constructor(width = 1280, height = 720, ...args) {

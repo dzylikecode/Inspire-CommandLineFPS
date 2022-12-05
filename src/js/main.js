@@ -129,8 +129,9 @@ function mainGame() {
   const stateX = format3d2(player.x);
   const stateY = format3d2(player.y);
   const stateTheta = format3d2(player.theta);
-  const stateFPS = format3d2(elapsedTime);
+  const stateFPS = format3d2(1.0 / elapsedTime);
   const stateInfo = `X=${stateX}, Y=${stateY}, A=${stateTheta}, FPS=${stateFPS}`;
+  screen.setInfo(stateInfo);
 
   // Display Map
   for (let nx = 0; nx < map.width; nx++)
