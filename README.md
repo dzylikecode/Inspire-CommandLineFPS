@@ -4,6 +4,8 @@
 
   video: https://www.youtube.com/watch?v=xW8skO7MFYw
 
+- implement: https://dzylikecode.github.io/Inspire-CommandLineFPS/src/index.html
+
 ## target
 
 - [ ] 快乐的编程乐趣
