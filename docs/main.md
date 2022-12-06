@@ -34,6 +34,14 @@
 }
 ```
 
+## 模型
+
+- `#` 代表 1X1 的墙体
+
+  墙体的高度为 screen height
+
+- player 的视野高度为 $\frac{1}{2}$ screen height
+
 ## 细节
 
 - 数组的申请
@@ -71,9 +79,25 @@
   return [x, mapHeight - 1 - y];
   ```
 
+- 光线扫描的顺序
+
+  ![](assets/2022-12-06-18-26-04.png)
+
+  $$\theta_0 = PlayDir + \frac{1}{2}FOV$$
+
+  为了从左往右扫描, 显示图像, 则:
+
+  $$\theta_i = \theta_0 - \frac{i}{N}FOV$$
+
+### 天花板的计算
+
+![](assets/2022-12-06-18-47-03.png)
+
+说明墙的高度设置为 screenHeight
+
 ## 改进
 
-把输入的"w" "a" "s" "d" 吃掉, 不显示出来
+- [x] 把输入的"w" "a" "s" "d" 吃掉, 不显示出来
 
 ## reference
 

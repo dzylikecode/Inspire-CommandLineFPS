@@ -100,8 +100,6 @@ function mainGame() {
       );
     }
 
-    // 注意坐标系变换
-
     // Calculate distance to ceiling and floor
     const ceiling = screen.height * (1 / 2.0 + 1 / distanceToWall);
     const floor = screen.height - ceiling;
