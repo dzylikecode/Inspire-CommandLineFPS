@@ -6,11 +6,22 @@ const pi = Math.PI;
 const T = 2 * pi;
 
 describe("normalize radians", function () {
-  it("radians belongs to [0, 2*pi]", function () {
-    assertFloat(test.normalizeRadians(2), 2);
-    assertFloat(test.normalizeRadians(2.3), 2.3);
+  function testUnit(actual, expect) {
+    const normalized = test.normalizeRadians(actual);
+    it(`normalize(${actual}) = ${normalized} to ${expect}`, function () {
+      assertFloat(normalized, expect);
+    });
+  }
+  describe("radians belongs to [0, 2*pi]", function () {
+    testUnit(2, 2);
+    testUnit(2.3, 2.3);
   });
-  it("radians is smaller than 0", function () {
-    assertFloat(test.normalizeRadians(-2), T - 2);
+  describe("radians is smaller than 0", function () {
+    testUnit(-2, T - 2);
+    testUnit(-2.3, T - 2.3);
+  });
+  describe("radians is largerr than 2*pi", function () {
+    testUnit(T + 2, 2);
+    testUnit(T + 2.3, 2.3);
   });
 });

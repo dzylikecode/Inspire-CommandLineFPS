@@ -11,12 +11,12 @@ import { setGameLoop } from "./gameFrame.js";
 const screenWidth = 80; // Console Screen Size X (columns)
 const screenHeight = 40; // Console Screen Size Y (rows)
 
-const playerStartX = 14.7; // Player Start Position
+const playerStartX = 12.7; // Player Start Position
 const playerStartY = 5.09;
-const playerStartTheta = 0.0; // Player Start Rotation
+const playerStartTheta = Math.PI / 2; // Player Start Rotation
 const playerSpeed = 5.0; // Walking Speed
 const angleSpeed = playerSpeed * 0.75;
-const cameraFov = 3.14159 / 4.0; // Field of View
+const cameraFov = Math.PI / 4.0; // Field of View
 const cameraDepth = 16.0; // Maximum rendering distance
 
 // Create Screen Buffer
@@ -65,8 +65,8 @@ function mainGame() {
 
   for (let x = 0; x < screen.width; x++) {
     // For each column, calculate the projected ray angle into world space
-    const rayStartTheta = player.theta - camera.fov / 2.0;
-    const rayTheta = rayStartTheta + (x / screen.width) * camera.fov;
+    const rayStartTheta = player.theta + camera.fov / 2.0; // 从左往右扫描
+    const rayTheta = rayStartTheta - (x / screen.width) * camera.fov;
 
     const [rayDirX, rayDirY] = [Math.cos(rayTheta), Math.sin(rayTheta)]; // Unit vector for ray in player space
 
@@ -122,15 +122,6 @@ function mainGame() {
     }
   }
 
-  // Display Stats
-
-  const stateX = format3d2(player.x);
-  const stateY = format3d2(player.y);
-  const stateTheta = formatRad(player.theta) + "°";
-  const stateFPS = format3d2(1.0 / elapsedTime);
-  const stateInfo = `X=${stateX}, Y=${stateY}, A=${stateTheta}, FPS=${stateFPS}`;
-  screen.setInfo(stateInfo);
-
   // Display Map
   for (let nx = 0; nx < map.width; nx++)
     for (let ny = 0; ny < map.height; ny++) {
@@ -141,7 +132,16 @@ function mainGame() {
     Math.floor(player.x),
     Math.floor(player.y)
   );
+
   screen.setInScreen(playerMapX, playerMapY, "P");
+
+  // Display Stats
+  const stateX = format3d2(player.x); // Catesian Coordinates
+  const stateY = format3d2(player.y);
+  const stateTheta = formatRad(player.theta) + "°";
+  const stateFPS = format3d2(1.0 / elapsedTime);
+  const stateInfo = `X=${stateX}, Y=${stateY}, A=${stateTheta}, FPS=${stateFPS}`;
+  screen.setInfo(stateInfo);
 
   // Display Frame
   screen.draw();

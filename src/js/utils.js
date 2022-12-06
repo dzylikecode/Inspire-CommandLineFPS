@@ -23,14 +23,15 @@ function radiansToDegrees(radians) {
 }
 
 function normalizeAngle(degree) {
-  if (degree < 0) normalizeAngle(degree + 360);
-  else if (degree > 360) normalizeAngle(degree - 360);
+  if (degree < 0) return normalizeAngle(degree + 360);
+  else if (degree > 360) return normalizeAngle(degree - 360);
   else return degree;
 }
 
 export function normalizeRadians(radians) {
-  if (radians < 0) normalizeRadians(radians + 2 * Math.PI);
-  else if (radians > 2 * Math.PI) normalizeRadians(radians - 2 * Math.PI);
+  if (radians < 0) return normalizeRadians(radians + 2 * Math.PI);
+  else if (radians > 2 * Math.PI)
+    return normalizeRadians(radians - 2 * Math.PI);
   else return radians;
 }
 
